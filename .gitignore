@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+venv/
+
+# Data
+data/
+*.dot
+*.exe
+*.png
+
