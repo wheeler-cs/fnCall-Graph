@@ -4,39 +4,30 @@ import r2pipe
 from sys import argv
 from typing import Dict, List
 
-from graphNode import GraphNode
-
+from AdjacencyMatrix import AdjacencyMatrix
 
 
 # == Function Definitions ==============================================================================================
-def extractData(inputFile: str):
-    cmdPipe = r2pipe.open("data/NPP.exe")
+def analyzeProgram(inputFile: str):
+    cmdPipe = r2pipe.open(inputFile)
     cmdPipe.cmd("aaa")
-    cmdPipe.cmd("agCj > data/output.json")
+    cmdPipe.cmd(f"agCj > {inputFile}.json")
 
 
-def readJson(inputFile: str):
-    with open(inputFile, 'r') as jsonFile:
+def jsonToAssociations(inputJson: str) -> Dict[str, List[str]]:
+    with open(inputJson) as jsonFile:
         jsonData = json.load(jsonFile)
-    return jsonData
 
-
-def buildGraph(jsonData) -> GraphNode:
-    rootNode = GraphNode("root", True)
-    for data in jsonData:
-        newNode = GraphNode(data["name"])
-        for child in data["imports"]:
-            childNode = GraphNode(child)
-            newNode.addChild(childNode)
-        rootNode.addChild(newNode)
-    return(rootNode)
-
+    associations = {}
+    for entry in jsonData:
+        associations[entry["name"]] = entry["imports"]
+    return associations
 
 
 # == Main ==============================================================================================================
 if __name__ == "__main__":
-    jsonData = readJson(argv[1])
-
-    graph = buildGraph(jsonData)
-    graph.inorderTraversal()
-
+    #analyzeProgram(argv[1])
+    assoc = jsonToAssociations(argv[1])
+    am = AdjacencyMatrix()
+    am.createMatrix(assoc)
+    am.printMatrix()
