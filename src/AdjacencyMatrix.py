@@ -1,6 +1,6 @@
 from itertools import product, zip_longest
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 
 class AdjacencyMatrix(object):
@@ -10,24 +10,19 @@ class AdjacencyMatrix(object):
 
 
     def createMatrix(self, associations: Dict[str, List[str]]) -> None:
-        # These lists are templates for every function's associated vector
-        nodeList = []
-        falseList = []
-        for key in associations.keys():
-            nodeList.append(key)
-            falseList.append(False)
-        # Add called functions to the list of nodes so matrix is square
-        # Also... double nested for-loops for exponential time complexity
-        for callList in associations.values(): # For all the list of calls made by a function
-            for element in callList:           # For every element in a given list
-                if element not in nodeList:
-                    nodeList.append(element)
-                    falseList.append(False)
-
+        # Function list is template of labels for what calls are made and by what
+        fnList: Set[str] = set()
+        for caller in associations.keys():
+            fnList.add(caller)
+            fnList.update(set(associations[caller]))
+        falseList = [False] * len(fnList)
+        # WARN: The above appears to be nondeterministic; the same input does not yield the same output, even though the
+        # representation is unchanged at its core.
+        
         # Take note of which callers use which callees
-        for node in nodeList:
+        for node in fnList:
             # I [kinda] have no idea what this does and at this point I'm too afraid to ask
-            callsMade = dict(zip_longest(*[iter(nodeList)], *[iter(falseList)], fillvalue=False))
+            callsMade = dict(zip_longest(*[iter(fnList)], *[iter(falseList)], fillvalue=False))
             if node in associations.keys():
                 for call in associations[node]:
                     callsMade[call] = True
