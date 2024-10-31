@@ -10,13 +10,14 @@ class AdjacencyMatrix(object):
 
 
     def createMatrix(self, associations: Dict[str, List[str]]) -> None:
-        # These lists are used initialize the matrix cells for a function
+        # These lists are templates for every function's associated vector
         nodeList = []
         falseList = []
         for key in associations.keys():
             nodeList.append(key)
             falseList.append(False)
         # Add called functions to the list of nodes so matrix is square
+        # Also... double nested for-loops for exponential time complexity
         for callList in associations.values(): # For all the list of calls made by a function
             for element in callList:           # For every element in a given list
                 if element not in nodeList:
@@ -35,4 +36,9 @@ class AdjacencyMatrix(object):
 
     def printMatrix(self) -> None:
         for row in self.matrix.values():
-            print(row)
+            for v in row.values():
+                if v:
+                    print("1 ", end='')
+                else:
+                    print("0 ", end='')
+            print('')

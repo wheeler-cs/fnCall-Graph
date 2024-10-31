@@ -8,3 +8,6 @@ data/
 *.exe
 *.png
 
+# VSCode
+.vscode/
+

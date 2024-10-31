@@ -8,7 +8,7 @@ from AdjacencyMatrix import AdjacencyMatrix
 
 
 # == Function Definitions ==============================================================================================
-def analyzeProgram(inputFile: str):
+def analyzeProgram(inputFile: str) -> None:
     cmdPipe = r2pipe.open(inputFile)
     cmdPipe.cmd("aaa")
     cmdPipe.cmd(f"agCj > {inputFile}.json")
@@ -26,8 +26,9 @@ def jsonToAssociations(inputJson: str) -> Dict[str, List[str]]:
 
 # == Main ==============================================================================================================
 if __name__ == "__main__":
-    #analyzeProgram(argv[1])
     assoc = jsonToAssociations(argv[1])
+    if len(assoc) == 0:
+        raise RuntimeError("Input JSON file could not be parsed")
     am = AdjacencyMatrix()
     am.createMatrix(assoc)
     am.printMatrix()
