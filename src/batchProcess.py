@@ -18,6 +18,7 @@ def parseArgv() -> argparse.Namespace:
 if __name__ == "__main__":
     args = parseArgv()
     am = AdjacencyMatrix()
+    print("Processing binaries...")
     for file in tqdm(listdir(args.inputdir)):
         fullPath = path.join(args.inputdir, file)
         if (path.isfile(fullPath)) and (fullPath[-4:] == ".exe"):

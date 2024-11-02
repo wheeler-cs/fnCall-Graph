@@ -18,9 +18,8 @@ def analyzeProgram(inputFile: str, cacheJson: bool = False) -> str:
 
     @return jsonData: A string storing the JSON output of the analysis by radare2.
     '''
-    cmdPipe = r2pipe.open(inputFile)
-    cmdPipe.cmd("aaa")
-    jsonData = cmdPipe.cmd("agCj")
+    cmdPipe = r2pipe.open(inputFile, flags=["-2"])
+    jsonData = cmdPipe.cmd("aaa; agCj;")
     if cacheJson:
         parsedPath = inputFile.split('/')
         storePath = path.join(parsedPath[0], "json", parsedPath[1] + ".json")
