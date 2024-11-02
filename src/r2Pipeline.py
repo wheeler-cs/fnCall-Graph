@@ -54,6 +54,14 @@ def jsonToAssociations(inputJson: str, doRawJson: bool = False) -> Dict[str, Lis
     return associations
 
 
+def batchAnalyzeJson(inputList: List[str], cacheJson: bool = False):
+    #am = AdjacencyMatrix()
+    for i in enumerate(inputList):
+        jsonData = analyzeProgram(i[1], cacheJson)
+        #assoc = jsonToAssociations(jsonData, True)
+        #am.createMatrix(assoc)
+
+
 # == Main ==============================================================================================================
 if __name__ == "__main__":
     assoc = jsonToAssociations(argv[1])
