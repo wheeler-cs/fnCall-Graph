@@ -1,9 +1,9 @@
 # == Imports ===========================================================================================================
 import json
 import networkx as nx
+import numpy as np
 from os import makedirs, path
-import r2pipe
-from sys import argv
+from r2pipe import open as r2open
 from tqdm import tqdm
 from typing import Dict, List
 
@@ -19,14 +19,16 @@ def analyzeProgram(inputFile: str, cacheJson: bool = False) -> List[Dict]:
 
     @return jsonData: JSON output of the analysis by radare2.
     '''
-    cmdPipe = r2pipe.open(inputFile, flags=["-2"])
+    cmdPipe = r2open(inputFile, flags=["-2"])
     jsonData = cmdPipe.cmd("aaa; agCj;")
+    # Write JSON output of radare2 to file
     if cacheJson:
         parsedPath = inputFile.split('/')
         storePath = path.join(parsedPath[0], "json", parsedPath[1] + ".json")
         makedirs(path.join(parsedPath[0], "json"), exist_ok=True)
         with open(storePath, 'w') as jDump:
             json.dump(jsonData, jDump)
+    # Convert string of JSON into a real JSON
     jsonData = json.loads(jsonData)
     return jsonData
 
@@ -40,23 +42,49 @@ def jsonToAdjlist(jsonData: List[Dict]) -> nx.DiGraph:
     @return callgraph: Networkx representation of JSON data, specifically, a digraph.
     '''
     callgraph = nx.DiGraph()
+    # Build adjacency list from JSON
     for entry in jsonData:
         for call in entry["imports"]:
-            callgraph.add_edge(entry["name"], call)
+            if not callgraph.has_edge(entry["name"], call):
+                callgraph.add_edge(entry["name"], call)
     return callgraph
 
 
-def batchAnalyzeJson(inputList: List[str], showProgress: bool = False, cacheJson: bool = False):
+def analysisAlgorithm(inputFile: str, cacheJson: bool = False) -> None:
+    '''
+    Analyzes a given executable file, generates a CFG, and stores the result as a numpy array in a file.
+
+    @param inputFile: Target executable file.
+    
+    @param cacheJson: Flag for if the JSON output of radare2 should be saved.
+    '''
+    splitFilename = inputFile.split('/')
+    # Analyze EXE and convert to an adjacency list
+    jsonData = analyzeProgram(inputFile, cacheJson)
+    callgraph = jsonToAdjlist(jsonData)
+    fnList = []
+    # Add all nodes with no duplicates
+    for edge in nx.edge_dfs(callgraph):
+        if edge[0] not in fnList:
+            fnList.append(edge[0])
+        if edge[1] not in fnList:
+            fnList.append(edge[1])
+    # Write numpy array to file, assuming a list was actually built
+    if len(fnList) > 0:
+        npArray = np.array(fnList)
+        npArray.tofile(path.join("data/analysis", splitFilename[-1] + ".npy"))
+
+
+def batchAnalyzeJson(inputList: List[str], showProgress: bool = False, cacheJson: bool = False) -> None:
+    '''
+    Driver code for the batch analysis.
+
+    @param inputList: List of files to be processed as part of the batch.
+
+    @param showProgress: Flag for if TQDM should render a progress bar.
+
+    @param cacheJson: Flag for if the JSON output of radare2 should be saved.
+    '''
     makedirs("data/analysis", exist_ok=True)
-    if showProgress:
-        for i in enumerate(tqdm((inputList))):
-            splitFilename = i[1].split('/')
-            jsonData = analyzeProgram(i[1], cacheJson)
-            callgraph = jsonToAdjlist(jsonData)
-            nx.write_adjlist(callgraph, path.join("data/analysis", splitFilename[-1] + ".adjlist"), delimiter=' ')
-    else:
-        for i in enumerate(inputList):
-            splitFilename = i[1].split('/')
-            jsonData = analyzeProgram(i[1], cacheJson)
-            callgraph = jsonToAdjlist(jsonData)
-            nx.write_adjlist(callgraph, path.join("data/analysis", splitFilename[-1] + ".adjlist"), delimiter=' ')
+    for i in enumerate(tqdm((inputList))) if showProgress else enumerate(inputList):
+        analysisAlgorithm(i[1], cacheJson)

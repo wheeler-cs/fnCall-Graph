@@ -25,21 +25,19 @@ def parseArgv() -> argparse.Namespace:
 
 def getFileList(inputDir: str, fileExtension: str = ".exe") -> List[str]:
      fileList = list()
-
     # Get only the files from the directory, ignore subdirectories
      for inode in listdir(inputDir):
           longName = path.join(inputDir, inode)
           # Ensures inode is a file and the last $n$ characters match the extension
           if(path.isfile(longName) and (longName[len(fileExtension) * -1:] == fileExtension)):
                fileList.append(longName)
-
      return fileList
 
 
 def generateSublists(inputList: List, divisions: int = 2) -> List[List]:
     # Make sure the list length and number of desired divisions are appropriate
     if(len(inputList) < divisions):
-        raise ValueError(f"Number of desired divisions ({divisions}) is not appropriate for list size")
+        raise ValueError(f"Number of desired divisions ({divisions}) is not appropriate for list size ({len(inputList)})")
     # Divide the list into $n$ sublists using numpy
     sublists = array_split(inputList, divisions)
     # Convert np arrays to lists
@@ -49,13 +47,14 @@ def generateSublists(inputList: List, divisions: int = 2) -> List[List]:
 
 
 def threadedGeneration(splitLists: List[List], procNum: int = 1) -> None:
-    # Parallelize matrix generation
     pManager = ProcessManager(procNum)
+    # Initialize threads
     for i in range(0, procNum):
-        if i == 0:
-            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], True, False])
-        else:
+        if i != 0:
             pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], False, False])
+        else:
+            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], True, False])
+    # Run threads and wait for them to finish
     pManager.startBatch()
     pManager.awaitBatch()
 
