@@ -5,7 +5,6 @@ import argparse
 from numpy import array_split, ndarray
 from os import listdir, path
 import r2Pipeline as r2p
-from tqdm import tqdm
 from typing import List
 
 # ==== Function Definitions ============================================================================================
