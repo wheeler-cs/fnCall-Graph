@@ -1,10 +1,10 @@
 from AdjacencyMatrix import AdjacencyMatrix
 from ProcessManager import ProcessManager
+import r2Pipeline as r2p
 
 import argparse
 from numpy import array_split, ndarray
 from os import listdir, path
-import r2Pipeline as r2p
 from typing import List
 
 # ==== Function Definitions ============================================================================================
@@ -39,8 +39,8 @@ def getFileList(inputDir: str, fileExtension: str = ".exe") -> List[str]:
 
 def generateSublists(inputList: List, divisions: int = 2) -> List[List]:
     # Make sure the list length and number of desired divisions are appropriate
-    if((divisions < 2) or (len(inputList) < divisions)):
-        raise ValueError("Number of desired divisions is not appropriate for list size")
+    if(len(inputList) < divisions):
+        raise ValueError(f"Number of desired divisions ({divisions}) is not appropriate for list size")
     # Divide the list into $n$ sublists using numpy
     sublists = array_split(inputList, divisions)
     # Convert np arrays to lists
@@ -49,21 +49,22 @@ def generateSublists(inputList: List, divisions: int = 2) -> List[List]:
     return sublists
 
 
+def threadedGeneration(splitLists: List[List], procNum: int = 1):
+    # Parallelize matrix generation
+    pManager = ProcessManager(procNum)
+    for i in range(0, procNum):
+        if i == 0:
+            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], True, True])
+        else:
+            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], False, True])
+    pManager.startBatch()
+    pManager.awaitBatch()
+
+
 # ==== Main ============================================================================================================
 if __name__ == "__main__":
     # Program setup
     args = parseArgv()
     fileList = getFileList(args.inputdir)
     splitLists = generateSublists(fileList, args.procnum)
-
-    # Create list of adjacency matrices
-    matrixList: List[AdjacencyMatrix] = list()
-    for i in range(0, args.procnum):
-        matrixList.append(AdjacencyMatrix())
-    
-    # Parallelize matrix generation
-    pManager = ProcessManager(args.procnum)
-    for i in range(0, args.procnum):
-        pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], True])
-    pManager.startBatch()
-    pManager.awaitBatch()
+    threadedGeneration(splitLists, args.procnum)
