@@ -1,4 +1,3 @@
-from AdjacencyMatrix import AdjacencyMatrix
 from ProcessManager import ProcessManager
 import r2Pipeline as r2p
 
@@ -49,21 +48,20 @@ def generateSublists(inputList: List, divisions: int = 2) -> List[List]:
     return sublists
 
 
-def threadedGeneration(splitLists: List[List], procNum: int = 1):
+def threadedGeneration(splitLists: List[List], procNum: int = 1) -> None:
     # Parallelize matrix generation
     pManager = ProcessManager(procNum)
     for i in range(0, procNum):
         if i == 0:
-            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], True, True])
+            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], True, False])
         else:
-            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], False, True])
+            pManager.addProcess(r2p.batchAnalyzeJson, [splitLists[i], False, False])
     pManager.startBatch()
     pManager.awaitBatch()
 
 
 # ==== Main ============================================================================================================
 if __name__ == "__main__":
-    # Program setup
     args = parseArgv()
     fileList = getFileList(args.inputdir)
     splitLists = generateSublists(fileList, args.procnum)

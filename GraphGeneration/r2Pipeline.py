@@ -47,11 +47,16 @@ def jsonToAdjlist(jsonData: List[Dict]) -> nx.DiGraph:
 
 
 def batchAnalyzeJson(inputList: List[str], showProgress: bool = False, cacheJson: bool = False):
+    makedirs("data/analysis", exist_ok=True)
     if showProgress:
         for i in enumerate(tqdm((inputList))):
+            splitFilename = i[1].split('/')
             jsonData = analyzeProgram(i[1], cacheJson)
             callgraph = jsonToAdjlist(jsonData)
-            nx.write_adjlist(callgraph, path.join("output", i[1]), delimiter=' ')
+            nx.write_adjlist(callgraph, path.join("data/analysis", splitFilename[-1] + ".adjlist"), delimiter=' ')
     else:
         for i in enumerate(inputList):
+            splitFilename = i[1].split('/')
             jsonData = analyzeProgram(i[1], cacheJson)
+            callgraph = jsonToAdjlist(jsonData)
+            nx.write_adjlist(callgraph, path.join("data/analysis", splitFilename[-1] + ".adjlist"), delimiter=' ')
