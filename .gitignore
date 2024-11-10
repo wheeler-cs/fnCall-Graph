@@ -4,6 +4,7 @@ venv/
 
 # Data
 data/
+executables/
 *.dot
 *.exe
 *.png

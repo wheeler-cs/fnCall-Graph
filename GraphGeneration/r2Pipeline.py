@@ -72,7 +72,7 @@ def analysisAlgorithm(inputFile: str, cacheJson: bool = False) -> None:
     # Write numpy array to file, assuming a list was actually built
     if len(fnList) > 0:
         npArray = np.array(fnList)
-        npArray.tofile(path.join("data/analysis", splitFilename[-1] + ".npy"))
+        npArray.tofile(path.join("data/analysis", splitFilename[-1] + ".npy"), sep=' ')
 
 
 def batchAnalyzeJson(inputList: List[str], showProgress: bool = False, cacheJson: bool = False) -> None:

@@ -1,8 +1,9 @@
 import sys
 # I hate this is how Python imports directories as modules
-sys.path += ["GraphGeneration"]
+sys.path += ["GraphGeneration", "GraphTransformer"]
 
 import batchProcess
+from GraphTransformer import GraphTransformer
 
 import argparse
 
