@@ -3,9 +3,14 @@ import sys
 sys.path += ["GraphGeneration", "GraphTransformer"]
 
 import batchProcess
-from GraphTransformer import GraphTransformer
+from GraphTransformer import GraphDataLoader, GraphTransformer
 
 import argparse
+from transformers import AutoTokenizer, RobertaTokenizer
+import evaluate
+
+
+tokenizer = RobertaTokenizer.from_pretrained("FacebookAI/roberta-base")
 
 
 def parseArgv() -> argparse.Namespace:
@@ -36,8 +41,20 @@ def generateDataset(inputDir: str, procNum: int):
     batchProcess.threadedGeneration(splitLists, procNum)
 
 
+def tokenizationPreprocessor(data):
+    return tokenizer(data["sequence"], truncation=True)
+
+
+def getMappedData(dataDir: str = "./data"):
+    loader = GraphDataLoader(dataDir)
+    dsDict = loader.getDatasetDict()
+    tokenizedData = dsDict.map(tokenizationPreprocessor, batched=True)
+    id2label, label2id = loader.createLabelIdMappings()
+    return tokenizedData, id2label, label2id
+
+
 def trainTransformer():
-    pass
+    tokenizedData, id2label, label2id = getMappedData()
 
 
 def main():

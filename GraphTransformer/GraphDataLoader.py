@@ -5,7 +5,7 @@ import numpy as np
 from os import listdir, path
 import pyarrow as pa
 from tqdm import tqdm
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 
 class GraphDataLoader():
@@ -69,13 +69,16 @@ class GraphDataLoader():
             testDataset = testDataset.add_item(element)
         dsDict = DatasetDict({"train": trainDataset, "test": testDataset})
         return dsDict
-    
 
-    def printClasses(self) -> None:
-        for set in self.datasets:
-            print(set.classification)
-            print(set.data[0].tolist())
 
+    def createLabelIdMappings(self) -> Tuple[Dict[int, str], Dict[int, str]]:
+        enumList = enumerate(self.datasets)
+        id2label = dict()
+        label2id = dict()
+        for enumeration in enumList:
+            id2label[enumeration[1].classification] = enumeration[0]
+            label2id[enumeration[0]] = enumeration[1].classification
+        return id2label, label2id
 
 
 class GraphDataset(object):
