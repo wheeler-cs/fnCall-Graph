@@ -47,6 +47,30 @@ class GraphDataLoader():
         return arrayList
     
 
+    def getDatasetDict(self) -> DatasetDict:
+        compiledTraining = []
+        compiledTesting = []
+        for database in self.datasets:
+            newDataset = []
+            for element in database.data:
+                # The np.array2string below is awful... Here's how it works:
+                # The np.array is converted into a string in the format "['a' 'b' 'c' ... 'z']" for tokenization
+                # The two braces at the ends of the string are removed and all ' are removed.
+                # I did this to just get a really long string of function calls.
+                newDataset.append({"label": database.classification, "sequence": np.array2string(element, max_line_width=1_000_000_000)[1:-1].replace('\'', '')})
+            train, test = splitDataset(newDataset, 0.8)
+            compiledTraining += train
+            compiledTesting += test
+        trainDataset = Dataset(pa.Table.from_pydict({}))
+        testDataset = Dataset(pa.Table.from_pydict({}))
+        for element in compiledTraining:
+            trainDataset = trainDataset.add_item(element)
+        for element in compiledTesting:
+            testDataset = testDataset.add_item(element)
+        dsDict = DatasetDict({"train": trainDataset, "test": testDataset})
+        return dsDict
+    
+
     def printClasses(self) -> None:
         for set in self.datasets:
             print(set.classification)
@@ -58,25 +82,6 @@ class GraphDataset(object):
     def __init__(self, classification: str, data: List[np.array]):
         self.classification: str = classification
         self.data: List[np.array] = data
-    
-
-    def getDatasetDict(self) -> DatasetDict:
-        newDataset = []
-        for element in self.data:
-            # The np.array2string below is awful... Here's how it works:
-            # The np.array is converted into a string in the format "['a' 'b' 'c' ... 'z']" for tokenization
-            # The two braces at the ends of the string are removed and all ' are removed.
-            # I did this to just get a really long string of function calls.
-            newDataset.append({"label": self.classification, "sequence": np.array2string(element, max_line_width=1_000_000_000)[1:-1].replace('\'', '')})
-        train, test = splitDataset(newDataset, 0.8)
-        trainDataset = Dataset(pa.Table.from_pydict({}))
-        testDataset = Dataset(pa.Table.from_pydict({}))
-        for element in train:
-            trainDataset = trainDataset.add_item(element)
-        for element in test:
-            testDataset = testDataset.add_item(element)
-        dsDict = DatasetDict({"train": trainDataset, "test": testDataset})
-        return dsDict
 
 
 def splitDataset(dataset: List, percentage: float = 0.5) -> Tuple[List, List]:
@@ -89,5 +94,5 @@ def splitDataset(dataset: List, percentage: float = 0.5) -> Tuple[List, List]:
 
 if __name__ == "__main__":
     loader = GraphDataLoader()
-    altSet = loader.datasets[0].getModifiedDataset()
-    dsDict = DatasetDict(altSet)
+    datasetDictionary = loader.getDatasetDict()
+    print(datasetDictionary)
