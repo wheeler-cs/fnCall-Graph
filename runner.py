@@ -3,14 +3,10 @@ import sys
 sys.path += ["GraphGeneration", "GraphTransformer"]
 
 import batchProcess
-from GraphTransformer import GraphDataLoader, GraphTransformer
+from GraphTransformer import GraphTransformer
 
 import argparse
-from transformers import AutoTokenizer, RobertaTokenizer
-import evaluate
 
-
-tokenizer = RobertaTokenizer.from_pretrained("FacebookAI/roberta-base")
 
 
 def parseArgv() -> argparse.Namespace:
@@ -24,7 +20,8 @@ def parseArgv() -> argparse.Namespace:
     parser.add_argument("-i", "--inputDir",
                         help="Target directory for input files",
                         type=str,
-                        required=True)
+                        required=False,
+                        default="./data")
     parser.add_argument("-n", "--procnum",
                         help="Number of subprocesses to spawn for parallel generation",
                         type = int,
@@ -41,20 +38,11 @@ def generateDataset(inputDir: str, procNum: int):
     batchProcess.threadedGeneration(splitLists, procNum)
 
 
-def tokenizationPreprocessor(data):
-    return tokenizer(data["sequence"], truncation=True)
-
-
-def getMappedData(dataDir: str = "./data"):
-    loader = GraphDataLoader(dataDir)
-    dsDict = loader.getDatasetDict()
-    tokenizedData = dsDict.map(tokenizationPreprocessor, batched=True)
-    id2label, label2id = loader.createLabelIdMappings()
-    return tokenizedData, id2label, label2id
-
-
-def trainTransformer():
-    tokenizedData, id2label, label2id = getMappedData()
+def trainTransformer(dataDir: str = "./data"):
+    gt = GraphTransformer(dataDir, 8, 3)
+    gt.callDataLoader()
+    gt.prepareDatasets()
+    gt.prepareModel()
 
 
 def main():
@@ -63,7 +51,7 @@ def main():
     if argv.mode == "generate":
         generateDataset(argv.inputDir, argv.procnum)
     elif argv.mode == "transformer":
-        trainTransformer()
+        trainTransformer(argv.inputDir)
     else: # This should never be reached, but just in case...
         raise ValueError("Incorrect argument provided for mode of operation")
 
