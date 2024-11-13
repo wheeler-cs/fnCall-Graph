@@ -19,18 +19,22 @@ def analyzeProgram(inputFile: str, cacheJson: bool = False) -> List[Dict]:
 
     @return jsonData: JSON output of the analysis by radare2.
     '''
-    cmdPipe = r2open(inputFile, flags=["-2"])
-    jsonData = cmdPipe.cmd("aaa; agCj;")
-    # Write JSON output of radare2 to file
-    if cacheJson:
-        parsedPath = inputFile.split('/')
-        storePath = path.join(parsedPath[0], "json", parsedPath[1] + ".json")
-        makedirs(path.join(parsedPath[0], "json"), exist_ok=True)
-        with open(storePath, 'w') as jDump:
-            json.dump(jsonData, jDump)
-    # Convert string of JSON into a real JSON
-    jsonData = json.loads(jsonData)
-    return jsonData
+    try:
+        cmdPipe = r2open(inputFile, flags=["-2"])
+        jsonData = cmdPipe.cmd("aaa; agCj;")
+        # Write JSON output of radare2 to file
+        if cacheJson:
+            parsedPath = inputFile.split('/')
+            storePath = path.join(parsedPath[0], "json", parsedPath[1] + ".json")
+            makedirs(path.join(parsedPath[0], "json"), exist_ok=True)
+            with open(storePath, 'w') as jDump:
+                json.dump(jsonData, jDump)
+        # Convert string of JSON into a real JSON
+        jsonData = json.loads(jsonData)
+        return jsonData
+    except Exception as e:
+        print(e)
+        return None
 
 
 def jsonToAdjlist(jsonData: List[Dict]) -> nx.DiGraph:
@@ -61,18 +65,19 @@ def analysisAlgorithm(inputFile: str, cacheJson: bool = False) -> None:
     splitFilename = inputFile.split('/')
     # Analyze EXE and convert to an adjacency list
     jsonData = analyzeProgram(inputFile, cacheJson)
-    callgraph = jsonToAdjlist(jsonData)
-    fnList = []
-    # Add all nodes with no duplicates
-    for edge in nx.edge_dfs(callgraph):
-        if edge[0] not in fnList:
-            fnList.append(edge[0])
-        if edge[1] not in fnList:
-            fnList.append(edge[1])
-    # Write numpy array to file, assuming a list was actually built
-    if len(fnList) > 0:
-        npArray = np.array(fnList)
-        npArray.tofile(path.join("data/analysis", splitFilename[-1] + ".npy"), sep=' ')
+    if jsonData is not None:
+        callgraph = jsonToAdjlist(jsonData)
+        fnList = []
+        # Add all nodes with no duplicates
+        for edge in nx.edge_dfs(callgraph):
+            if edge[0] not in fnList:
+                fnList.append(edge[0])
+            if edge[1] not in fnList:
+                fnList.append(edge[1])
+        # Write numpy array to file, assuming a list was actually built
+        if len(fnList) > 0:
+            npArray = np.array(fnList)
+            npArray.tofile(path.join("data/analysis", splitFilename[-1] + ".npy"), sep=' ')
 
 
 def batchAnalyzeJson(inputList: List[str], showProgress: bool = False, cacheJson: bool = False) -> None:
