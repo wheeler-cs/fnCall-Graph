@@ -2,6 +2,7 @@ datasets
 networkx
 r2pipe
 evaluate
+scikit-learn
 transformers
 tf-keras
 keras-nlp

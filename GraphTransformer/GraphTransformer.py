@@ -1,12 +1,19 @@
 from GraphDataLoader import GraphDataLoader
-from GraphTokenizer import GraphTokenizer
 
 import evaluate
 import numpy as np
 import tensorflow as tf
 from transformers import create_optimizer, DataCollatorWithPadding, RobertaTokenizer, TFAutoModelForSequenceClassification
 from transformers.keras_callbacks import KerasMetricCallback
-from typing import Dict, List
+from typing import Dict
+
+
+gTokenizer = RobertaTokenizer.from_pretrained("FacebookAI/roberta-base")
+gDataCollator = DataCollatorWithPadding(tokenizer=gTokenizer, return_tensors="tf")
+
+
+def createTokenization(data):
+        return gTokenizer(data["sequence"], truncation=True)
 
 
 class GraphTransformer():
@@ -14,11 +21,10 @@ class GraphTransformer():
         # Data mapping and tokenization
         self.dataDirectory:          str = dataDir
         self.dataLoader: GraphDataLoader = GraphDataLoader(dataDir)
-        self.tokenizer: RobertaTokenizer = RobertaTokenizer.from_pretrained("FacebookAI/roberta-base")
         self.id2label:    Dict[int, str] = dict()
         self.label2id:    Dict[str, int] = dict()
         self.tokenizedData = None
-        self.dataCollator = DataCollatorWithPadding(tokenizer=self.tokenizer, return_tensors="tf")
+        self.callDataLoader()
         # Model parameters
         self.batchSize:       int = batchSize
         self.epochs:          int = epochs
@@ -29,7 +35,7 @@ class GraphTransformer():
                                                          num_train_steps=self.trainingSteps)
         # Transformer model
         self.model = TFAutoModelForSequenceClassification.from_pretrained("FacebookAI/roberta-base",
-                                                                          num_labels=len(self.id2label),
+                                                                          num_labels=2,
                                                                           id2label=self.id2label,
                                                                           label2id=self.label2id)
         self.trainingSet = None
@@ -39,33 +45,31 @@ class GraphTransformer():
     def callDataLoader(self):
         self.dataLoader = GraphDataLoader(self.dataDirectory)
         dsDict = self.dataLoader.getDatasetDict()
-        self.tokenizedData = dsDict.map(self._createTokenization, batched=True)
-        self.id2label, self.label2id = self.dataLoader.createLabelIdMappings()
+        self.tokenizedData = dsDict.map(createTokenization, batched=True)
+        self.label2id, self.id2label = self.dataLoader.createLabelIdMappings()
         self.batchesPerEpoch = len(self.tokenizedData)
     
 
-    def _createTokenization(self, data):
-        return self.tokenizer(data["sequence"], truncation=True)
-
-
     def prepareDatasets(self) -> None:
         # BUG: RuntimeError: Unrecognized array dtype object. Nested types and image/audio types are not supported yet.
-        self.trainingSet = self.model.prepare_tf_dataset(self.tokenizedData["train"], shuffle=True,  batch_size=16, collate_fn=self.dataCollator)
-        self.testingSet  = self.model.prepare_tf_dataset(self.tokenizedData["test"],  shuffle=False, batch_size=16, collate_fn=self.dataCollator)
+        self.trainingSet = self.model.prepare_tf_dataset(self.tokenizedData["train"], shuffle=True,  batch_size=16, collate_fn=gDataCollator)
+        self.testingSet  = self.model.prepare_tf_dataset(self.tokenizedData["test"],  shuffle=False, batch_size=16, collate_fn=gDataCollator)
     
 
     def computeMetrics(self, evalPrediction) -> None:
         accuracy = evaluate.load("accuracy")
         predictions, labels = evalPrediction
         predictions = np.argmax(predictions, axis=1)
-        return accuracy.computer(predictions=predictions, references=labels)
+        return accuracy.compute(predictions=predictions, references=labels)
 
 
     def prepareModel(self) -> None:
-        with tf.device("/CPU:0"):
-            self.model.compile(optimizer=self.optimizer)
-            self.metricCallback = KerasMetricCallback(metric_fn=self.computeMetrics, eval_dataset=self.testingSet)
-            self.model.fit(x=self.trainingSet, validation_data=self.testingSet, epochs=3, callbacks = [self.metricCallback])
+        self.model.compile(optimizer=self.optimizer)
+    
+
+    def trainModel(self) -> None:
+        metricCallback = KerasMetricCallback(metric_fn=self.computeMetrics, eval_dataset=self.testingSet)
+        self.model.fit(x=self.trainingSet, validation_data=self.testingSet, epochs=3, callbacks = [metricCallback])
 
 
 

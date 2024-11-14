@@ -40,9 +40,9 @@ def generateDataset(inputDir: str, procNum: int):
 
 def trainTransformer(dataDir: str = "./data"):
     gt = GraphTransformer(dataDir, 8, 3)
-    gt.callDataLoader()
     gt.prepareDatasets()
     gt.prepareModel()
+    gt.trainModel()
 
 
 def main():

@@ -28,7 +28,7 @@ class GraphDataLoader():
             fullPath = path.join(self.dataDirectory, inode)
             if(path.isdir(fullPath)):
                 data = self.loadNumpyArrays(fullPath)
-                self.datasets.append(GraphDataset(inode, data))
+                self.datasets.append(GraphDataset(inode, len(self.datasets), data))
 
     
     def loadNumpyArrays(self, dataDirectory: str) -> List[np.array]:
@@ -57,7 +57,7 @@ class GraphDataLoader():
                 # The np.array is converted into a string in the format "['a' 'b' 'c' ... 'z']" for tokenization
                 # The two braces at the ends of the string are removed and all ' are removed.
                 # I did this to just get a really long string of function calls.
-                newDataset.append({"label": database.classification, "sequence": np.array2string(element, max_line_width=1_000_000_000)[1:-1].replace('\'', '')})
+                newDataset.append({"label": database.encodedClass, "sequence": np.array2string(element, max_line_width=1_000_000_000)[1:-1].replace('\'', '')})
             train, test = splitDataset(newDataset, 0.8)
             compiledTraining += train
             compiledTesting += test
@@ -82,8 +82,9 @@ class GraphDataLoader():
 
 
 class GraphDataset(object):
-    def __init__(self, classification: str, data: List[np.array]):
+    def __init__(self, classification: str, encodedClass: int, data: List[np.array]):
         self.classification: str = classification
+        self.encodedClass: int = encodedClass
         self.data: List[np.array] = data
 
 
