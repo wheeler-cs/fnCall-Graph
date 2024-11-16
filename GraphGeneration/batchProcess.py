@@ -59,6 +59,10 @@ def threadedGeneration(splitLists: List[List], procNum: int = 1) -> None:
     pManager.awaitBatch()
 
 
+def nonThreadedGeneration(fileList: List[str]) -> None:
+    r2p.batchAnalyzeJson(fileList, True, False)
+
+
 # ==== Main ============================================================================================================
 if __name__ == "__main__":
     args = parseArgv()

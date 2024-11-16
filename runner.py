@@ -35,7 +35,7 @@ def generateDataset(inputDir: str, procNum: int):
     # @see GraphGeneration/batchProcess.py
     fileList = batchProcess.getFileList(inputDir)
     if procNum == 1:
-        batchProcess.threadedGeneration(fileList, 1)
+        batchProcess.nonThreadedGeneration(fileList)
     else:
         splitLists = batchProcess.generateSublists(fileList, procNum)
         batchProcess.threadedGeneration(splitLists, procNum)
