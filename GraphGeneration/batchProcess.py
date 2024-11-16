@@ -63,5 +63,9 @@ def threadedGeneration(splitLists: List[List], procNum: int = 1) -> None:
 if __name__ == "__main__":
     args = parseArgv()
     fileList = getFileList(args.inputdir)
-    splitLists = generateSublists(fileList, args.procnum)
-    threadedGeneration(splitLists, args.procnum)
+    if args.procnum == 1:
+        r2p.batchAnalyzeJson(fileList, True, False)
+    else:
+        splitLists = generateSublists(fileList, args.procnum)
+        threadedGeneration(splitLists, args.procnum)
+    
