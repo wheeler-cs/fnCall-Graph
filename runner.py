@@ -34,8 +34,12 @@ def generateDataset(inputDir: str, procNum: int):
     # Get list of executables and evenly divide them among {procNum} lists
     # @see GraphGeneration/batchProcess.py
     fileList = batchProcess.getFileList(inputDir)
-    splitLists = batchProcess.generateSublists(fileList, procNum)
-    batchProcess.threadedGeneration(splitLists, procNum)
+    if procNum == 1:
+        batchProcess.threadedGeneration(fileList, 1)
+    else:
+        splitLists = batchProcess.generateSublists(fileList, procNum)
+        batchProcess.threadedGeneration(splitLists, procNum)
+
 
 
 def trainTransformer(dataDir: str = "./data"):
