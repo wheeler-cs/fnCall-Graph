@@ -43,7 +43,6 @@ class GraphTransformer():
     
 
     def callDataLoader(self):
-        self.dataLoader = GraphDataLoader(self.dataDirectory)
         dsDict = self.dataLoader.getDatasetDict()
         self.tokenizedData = dsDict.map(createTokenization, batched=True)
         self.label2id, self.id2label = self.dataLoader.createLabelIdMappings()
