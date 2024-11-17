@@ -50,7 +50,6 @@ class GraphTransformer():
     
 
     def prepareDatasets(self) -> None:
-        # BUG: RuntimeError: Unrecognized array dtype object. Nested types and image/audio types are not supported yet.
         self.trainingSet = self.model.prepare_tf_dataset(self.tokenizedData["train"], shuffle=True,  batch_size=16, collate_fn=gDataCollator)
         self.testingSet  = self.model.prepare_tf_dataset(self.tokenizedData["test"],  shuffle=False, batch_size=16, collate_fn=gDataCollator)
     
@@ -68,7 +67,7 @@ class GraphTransformer():
 
     def trainModel(self) -> None:
         metricCallback = KerasMetricCallback(metric_fn=self.computeMetrics, eval_dataset=self.testingSet)
-        self.model.fit(x=self.trainingSet, validation_data=self.testingSet, epochs=3, callbacks = [metricCallback])
+        self.model.fit(x=self.trainingSet, validation_data=self.testingSet, epochs=self.epochs, callbacks = [metricCallback])
 
 
 

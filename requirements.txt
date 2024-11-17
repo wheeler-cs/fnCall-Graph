@@ -4,5 +4,6 @@ r2pipe
 evaluate
 scikit-learn
 transformers
+tensorflow[and-cuda]
 tf-keras
 keras-nlp

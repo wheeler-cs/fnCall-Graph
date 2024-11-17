@@ -15,7 +15,7 @@ def parseArgv() -> argparse.Namespace:
     parser.add_argument("-m", "--mode",
                         help="Determines the mode of operation for the program",
                         type=str,
-                        choices=["generate", "transformer"],
+                        choices=["generator", "transformer"],
                         required=True)
     parser.add_argument("-i", "--inputDir",
                         help="Target directory for input files",
@@ -23,10 +23,20 @@ def parseArgv() -> argparse.Namespace:
                         required=False,
                         default="./data")
     parser.add_argument("-n", "--procnum",
-                        help="Number of subprocesses to spawn for parallel generation",
+                        help="[Generator Only] Number of subprocesses to spawn for parallel generation",
                         type = int,
                         required = False,
                         default=1)
+    parser.add_argument("-b", "--batchSize",
+                        help="[Transformer Only] The batch size to using while training",
+                        type=int,
+                        required=False,
+                        default=32)
+    parser.add_argument("-e", "--epochs",
+                        help="[Transformer Only] The number of epochs that should occur while training",
+                        type=int,
+                        required=False,
+                        default=5)
     return parser.parse_args()
 
 
@@ -42,8 +52,8 @@ def generateDataset(inputDir: str, procNum: int):
 
 
 
-def trainTransformer(dataDir: str = "./data"):
-    gt = GraphTransformer(dataDir, 8, 3)
+def trainTransformer(dataDir: str, batchSize: int, epochs: int):
+    gt = GraphTransformer(dataDir, batchSize, epochs)
     gt.prepareDatasets()
     gt.prepareModel()
     gt.trainModel()
@@ -55,7 +65,7 @@ def main():
     if argv.mode == "generate":
         generateDataset(argv.inputDir, argv.procnum)
     elif argv.mode == "transformer":
-        trainTransformer(argv.inputDir)
+        trainTransformer(argv.inputDir, argv.batchSize, argv.epochs)
     else: # This should never be reached, but just in case...
         raise ValueError("Incorrect argument provided for mode of operation")
 
