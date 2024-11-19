@@ -16,6 +16,13 @@ def createTokenization(data):
         return gTokenizer(data["sequence"], truncation=True)
 
 
+def computeMetrics(evalPrediction) -> None:
+    accuracy = evaluate.load("accuracy")
+    predictions, labels = evalPrediction
+    predictions = np.argmax(predictions, axis=1)
+    return accuracy.compute(predictions=predictions, references=labels)
+
+
 class GraphTransformer():
     def __init__(self, dataDir: str, batchSize: int, epochs: int):
         # Data mapping and tokenization
@@ -28,7 +35,7 @@ class GraphTransformer():
         # Model parameters
         self.batchSize:       int = batchSize
         self.epochs:          int = epochs
-        self.batchesPerEpoch: int = 1
+        self.batchesPerEpoch: int = len(self.tokenizedData["train"]) // batchSize
         self.trainingSteps:   int = int(self.batchesPerEpoch * self.epochs)
         self.optimizer, self.schedule = create_optimizer(init_lr=2e-5,
                                                          num_warmup_steps=0,
@@ -52,13 +59,6 @@ class GraphTransformer():
     def prepareDatasets(self) -> None:
         self.trainingSet = self.model.prepare_tf_dataset(self.tokenizedData["train"], shuffle=True,  batch_size=16, collate_fn=gDataCollator)
         self.testingSet  = self.model.prepare_tf_dataset(self.tokenizedData["test"],  shuffle=False, batch_size=16, collate_fn=gDataCollator)
-    
-
-    def computeMetrics(self, evalPrediction) -> None:
-        accuracy = evaluate.load("accuracy")
-        predictions, labels = evalPrediction
-        predictions = np.argmax(predictions, axis=1)
-        return accuracy.compute(predictions=predictions, references=labels)
 
 
     def prepareModel(self) -> None:
@@ -66,7 +66,7 @@ class GraphTransformer():
     
 
     def trainModel(self) -> None:
-        metricCallback = KerasMetricCallback(metric_fn=self.computeMetrics, eval_dataset=self.testingSet)
+        metricCallback = KerasMetricCallback(metric_fn=computeMetrics, eval_dataset=self.testingSet)
         self.model.fit(x=self.trainingSet, validation_data=self.testingSet, epochs=self.epochs, callbacks = [metricCallback])
 
 
