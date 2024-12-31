@@ -8,6 +8,7 @@ executables/
 *.dot
 *.exe
 *.png
+PretrainedModel/*
 
 # VSCode
 .vscode/

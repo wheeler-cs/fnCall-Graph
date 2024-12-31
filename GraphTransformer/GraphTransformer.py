@@ -68,6 +68,9 @@ class GraphTransformer():
     def trainModel(self) -> None:
         metricCallback = KerasMetricCallback(metric_fn=computeMetrics, eval_dataset=self.testingSet)
         self.model.fit(x=self.trainingSet, validation_data=self.testingSet, epochs=self.epochs, callbacks = [metricCallback])
+        self.model.save_pretrained("PretrainedModel")
+        global gTokenizer
+        gTokenizer.save_pretrained("PretrainedModel")
 
 
 
